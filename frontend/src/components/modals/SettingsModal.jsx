@@ -1,38 +1,82 @@
-import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, Save } from 'lucide-react';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { useSpeech } from '../../context/SpeechContext';
 import { useAuth } from '../../context/AuthContext';
+import Toast from '../ui/Toast';
 
 /**
  * SettingsModal: panel accesible para calibrar todas las opciones de
  * accesibilidad: velocidad de escaneo, tiempo de dwell, voz del sistema,
- * velocidad/tono de voz y tema visual. Los cambios se guardan también
- * en el backend a través de AuthContext.savePreferences.
+ * velocidad/tono de voz y tema visual.
+ *
+ * Los cambios se editan localmente (borrador) mientras el usuario ajusta
+ * los controles, y solo se aplican/persisten todos juntos al pulsar
+ * "Guardar ajustes". Cerrar el modal sin guardar descarta los cambios.
  */
 export default function SettingsModal({ isOpen, onClose }) {
-  const {
-    scanningEnabled,
-    scanSpeed,
-    dwellEnabled,
-    dwellTime,
-    theme,
-    updateSetting,
-  } = useAccessibility();
-  const { voices, rate, setRate, pitch, setPitch, voiceURI, setVoiceURI } = useSpeech();
+  const accessibility = useAccessibility();
+  const speech = useSpeech();
   const { savePreferences } = useAuth();
 
-  if (!isOpen) return null;
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  // Al abrir el modal, inicializa el borrador con los valores actuales
+  // de accesibilidad y voz (para poder cancelar sin efectos secundarios).
+  useEffect(() => {
+    if (!isOpen) return;
+    setDraft({
+      scanningEnabled: accessibility.scanningEnabled,
+      scanSpeed: accessibility.scanSpeed,
+      dwellEnabled: accessibility.dwellEnabled,
+      dwellTime: accessibility.dwellTime,
+      theme: accessibility.theme,
+      rate: speech.rate,
+      pitch: speech.pitch,
+      voiceURI: speech.voiceURI,
+    });
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!isOpen || !draft) return null;
+
+  const updateDraft = (key, value) => setDraft((prev) => ({ ...prev, [key]: value }));
 
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') onClose();
   };
 
-  const persist = async (partial) => {
+  // Aplica todo el borrador de una vez: actualiza los contextos locales
+  // (accesibilidad y voz) y persiste las preferencias en el backend.
+  const handleSave = async () => {
+    setSaving(true);
     try {
-      await savePreferences(partial);
+      accessibility.updateSetting('scanningEnabled', draft.scanningEnabled);
+      accessibility.updateSetting('scanSpeed', draft.scanSpeed);
+      accessibility.updateSetting('dwellEnabled', draft.dwellEnabled);
+      accessibility.updateSetting('dwellTime', draft.dwellTime);
+      accessibility.updateSetting('theme', draft.theme);
+      speech.setRate(draft.rate);
+      speech.setPitch(draft.pitch);
+      speech.setVoiceURI(draft.voiceURI);
+
+      await savePreferences({
+        scanningEnabled: draft.scanningEnabled,
+        scanSpeed: draft.scanSpeed,
+        dwellEnabled: draft.dwellEnabled,
+        dwellTime: draft.dwellTime,
+        theme: draft.theme,
+        voiceRate: draft.rate,
+        voicePitch: draft.pitch,
+        preferredVoiceURI: draft.voiceURI,
+      });
+
+      setToast({ message: 'Ajustes guardados correctamente', type: 'success' });
     } catch {
-      // Falla silenciosamente si no hay sesión activa; los ajustes
-      // siguen aplicándose localmente vía AccessibilityContext.
+      setToast({ message: 'No se pudieron guardar los ajustes en el servidor', type: 'error' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -63,27 +107,20 @@ export default function SettingsModal({ isOpen, onClose }) {
               Escaneo secuencial (pulsadores)
               <input
                 type="checkbox"
-                checked={scanningEnabled}
-                onChange={(e) => {
-                  updateSetting('scanningEnabled', e.target.checked);
-                  persist({ scanningEnabled: e.target.checked });
-                }}
+                checked={draft.scanningEnabled}
+                onChange={(e) => updateDraft('scanningEnabled', e.target.checked)}
                 className="h-6 w-6"
               />
             </label>
             <label className="mt-3 flex flex-col gap-1 text-sm">
-              Velocidad de escaneo: {scanSpeed} ms
+              Velocidad de escaneo: {draft.scanSpeed} ms
               <input
                 type="range"
                 min="500"
                 max="4000"
                 step="100"
-                value={scanSpeed}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  updateSetting('scanSpeed', val);
-                  persist({ scanSpeed: val });
-                }}
+                value={draft.scanSpeed}
+                onChange={(e) => updateDraft('scanSpeed', Number(e.target.value))}
               />
             </label>
           </section>
@@ -94,27 +131,20 @@ export default function SettingsModal({ isOpen, onClose }) {
               Selección por tiempo de morada (eye-tracking)
               <input
                 type="checkbox"
-                checked={dwellEnabled}
-                onChange={(e) => {
-                  updateSetting('dwellEnabled', e.target.checked);
-                  persist({ dwellEnabled: e.target.checked });
-                }}
+                checked={draft.dwellEnabled}
+                onChange={(e) => updateDraft('dwellEnabled', e.target.checked)}
                 className="h-6 w-6"
               />
             </label>
             <label className="mt-3 flex flex-col gap-1 text-sm">
-              Tiempo de morada: {dwellTime} ms
+              Tiempo de morada: {draft.dwellTime} ms
               <input
                 type="range"
                 min="400"
                 max="3000"
                 step="100"
-                value={dwellTime}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  updateSetting('dwellTime', val);
-                  persist({ dwellTime: val });
-                }}
+                value={draft.dwellTime}
+                onChange={(e) => updateDraft('dwellTime', Number(e.target.value))}
               />
             </label>
           </section>
@@ -125,11 +155,11 @@ export default function SettingsModal({ isOpen, onClose }) {
             <label className="flex flex-col gap-1 text-sm">
               Voz
               <select
-                value={voiceURI}
-                onChange={(e) => setVoiceURI(e.target.value)}
+                value={draft.voiceURI}
+                onChange={(e) => updateDraft('voiceURI', e.target.value)}
                 className="rounded-lg border-2 border-gray-300 p-2"
               >
-                {voices.map((v) => (
+                {speech.voices.map((v) => (
                   <option key={v.voiceURI} value={v.voiceURI}>
                     {v.name} ({v.lang})
                   </option>
@@ -137,25 +167,25 @@ export default function SettingsModal({ isOpen, onClose }) {
               </select>
             </label>
             <label className="mt-3 flex flex-col gap-1 text-sm">
-              Velocidad: {rate.toFixed(1)}x
+              Velocidad: {draft.rate.toFixed(1)}x
               <input
                 type="range"
                 min="0.5"
                 max="2"
                 step="0.1"
-                value={rate}
-                onChange={(e) => setRate(Number(e.target.value))}
+                value={draft.rate}
+                onChange={(e) => updateDraft('rate', Number(e.target.value))}
               />
             </label>
             <label className="mt-3 flex flex-col gap-1 text-sm">
-              Tono: {pitch.toFixed(1)}
+              Tono: {draft.pitch.toFixed(1)}
               <input
                 type="range"
                 min="0"
                 max="2"
                 step="0.1"
-                value={pitch}
-                onChange={(e) => setPitch(Number(e.target.value))}
+                value={draft.pitch}
+                onChange={(e) => updateDraft('pitch', Number(e.target.value))}
               />
             </label>
           </section>
@@ -172,12 +202,9 @@ export default function SettingsModal({ isOpen, onClose }) {
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => {
-                    updateSetting('theme', opt.id);
-                    persist({ theme: opt.id });
-                  }}
+                  onClick={() => updateDraft('theme', opt.id)}
                   className={`rounded-lg border-2 px-3 py-2 text-sm font-semibold ${
-                    theme === opt.id
+                    draft.theme === opt.id
                       ? 'border-blue-600 bg-blue-600 text-white'
                       : 'border-gray-300 bg-white text-gray-800'
                   }`}
@@ -187,8 +214,30 @@ export default function SettingsModal({ isOpen, onClose }) {
               ))}
             </div>
           </section>
+
+          {/* Guardado explícito de todos los ajustes */}
+          <div className="flex justify-end gap-2 border-t-2 border-gray-100 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl bg-gray-200 px-4 py-3 font-semibold"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white disabled:opacity-50"
+            >
+              <Save size={20} aria-hidden="true" />
+              {saving ? 'Guardando...' : 'Guardar ajustes'}
+            </button>
+          </div>
         </div>
       </div>
+
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
     </div>
   );
 }

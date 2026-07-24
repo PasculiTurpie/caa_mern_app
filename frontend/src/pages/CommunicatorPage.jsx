@@ -6,18 +6,26 @@ import CardGrid from '../components/communicator/CardGrid';
 import AddCardModal from '../components/modals/AddCardModal';
 import SettingsModal from '../components/modals/SettingsModal';
 import Toast from '../components/ui/Toast';
-import { getCardsRequest, createCardRequest } from '../services/api';
+import {
+  getCardsRequest,
+  createCardRequest,
+  updateCardRequest,
+  deleteCardRequest,
+} from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * CommunicatorPage: pantalla principal de la aplicación. Combina la barra
  * de frase, el filtro de categorías y la cuadrícula de tarjetas, y coordina
- * la carga/creación de tarjetas contra el backend.
+ * la carga/creación/edición de tarjetas contra el backend.
  */
 export default function CommunicatorPage() {
+  const { user } = useAuth();
   const [cards, setCards] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [selectedCards, setSelectedCards] = useState([]);
-  const [isAddCardOpen, setIsAddCardOpen] = useState(false);
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [editingCard, setEditingCard] = useState(null); // null = modo "crear"
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,22 +56,60 @@ export default function CommunicatorPage() {
 
   const handleClearPhrase = () => setSelectedCards([]);
 
-  const handleAddCard = async (cardData) => {
+  const handleOpenAddCard = () => {
+    setEditingCard(null); // asegura que el modal abra en modo "crear"
+    setIsCardModalOpen(true);
+  };
+
+  const handleOpenEditCard = (card) => {
+    setEditingCard(card);
+    setIsCardModalOpen(true);
+  };
+
+  const handleCloseCardModal = () => {
+    setIsCardModalOpen(false);
+    setEditingCard(null);
+  };
+
+  // Crea o actualiza una tarjeta según si `editingCard` está definido.
+  const handleSubmitCard = async (cardData) => {
     try {
-      const { data } = await createCardRequest(cardData);
-      setCards((prev) => [data, ...prev]);
-      setToast({ message: 'Tarjeta creada correctamente', type: 'success' });
+      if (editingCard) {
+        const { data } = await updateCardRequest(editingCard._id, cardData);
+        setCards((prev) => prev.map((c) => (c._id === data._id ? data : c)));
+        setSelectedCards((prev) => prev.map((c) => (c._id === data._id ? data : c)));
+        setToast({ message: 'Tarjeta actualizada correctamente', type: 'success' });
+      } else {
+        const { data } = await createCardRequest(cardData);
+        setCards((prev) => [data, ...prev]);
+        setToast({ message: 'Tarjeta creada correctamente', type: 'success' });
+      }
     } catch {
-      setToast({ message: 'No se pudo crear la tarjeta', type: 'error' });
+      setToast({
+        message: editingCard ? 'No se pudo actualizar la tarjeta' : 'No se pudo crear la tarjeta',
+        type: 'error',
+      });
+    }
+  };
+
+  // Elimina una tarjeta tras confirmación del usuario (acción irreversible).
+  const handleDeleteCard = async (card) => {
+    const confirmed = window.confirm(`¿Eliminar la tarjeta "${card.text}"? Esta acción no se puede deshacer.`);
+    if (!confirmed) return;
+
+    try {
+      await deleteCardRequest(card._id);
+      setCards((prev) => prev.filter((c) => c._id !== card._id));
+      setSelectedCards((prev) => prev.filter((c) => c._id !== card._id));
+      setToast({ message: 'Tarjeta eliminada correctamente', type: 'success' });
+    } catch {
+      setToast({ message: 'No se pudo eliminar la tarjeta', type: 'error' });
     }
   };
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <Header
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenAddCard={() => setIsAddCardOpen(true)}
-      />
+      <Header onOpenSettings={() => setIsSettingsOpen(true)} onOpenAddCard={handleOpenAddCard} />
 
       <PhraseBar
         selectedCards={selectedCards}
@@ -79,14 +125,21 @@ export default function CommunicatorPage() {
             Cargando tarjetas...
           </p>
         ) : (
-          <CardGrid cards={cards} onCardSelect={handleSelectCard} />
+          <CardGrid
+            cards={cards}
+            onCardSelect={handleSelectCard}
+            onCardEdit={handleOpenEditCard}
+            onCardDelete={handleDeleteCard}
+            currentUserId={user?._id}
+          />
         )}
       </main>
 
       <AddCardModal
-        isOpen={isAddCardOpen}
-        onClose={() => setIsAddCardOpen(false)}
-        onSubmit={handleAddCard}
+        isOpen={isCardModalOpen}
+        onClose={handleCloseCardModal}
+        onSubmit={handleSubmitCard}
+        initialCard={editingCard}
       />
 
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />

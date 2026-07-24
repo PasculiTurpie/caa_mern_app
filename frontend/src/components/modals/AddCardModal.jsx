@@ -1,34 +1,47 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { CATEGORY_LIST, getCategoryStyles } from '../../utils/fitzgeraldColors';
 
 /**
- * AddCardModal: formulario accesible para crear una nueva tarjeta
- * personalizada (texto, categoría, emoji/imagen). Se cierra con Escape
- * y atrapa el foco dentro del diálogo mediante el atributo `role="dialog"`.
+ * AddCardModal: formulario accesible para crear una tarjeta nueva o editar
+ * una existente. Si se recibe `initialCard`, el formulario se precarga con
+ * sus datos y opera en modo edición (título y botón cambian en consecuencia).
+ * Se cierra con Escape y usa `role="dialog"` para el diálogo modal.
  */
-export default function AddCardModal({ isOpen, onClose, onSubmit }) {
+export default function AddCardModal({ isOpen, onClose, onSubmit, initialCard = null }) {
+  const isEditMode = Boolean(initialCard);
+
   const [text, setText] = useState('');
   const [category, setCategory] = useState(CATEGORY_LIST[0]);
   const [emoji, setEmoji] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isPublic, setIsPublic] = useState(false);
 
-  if (!isOpen) return null;
+  // Cada vez que se abre el modal, precarga los datos de la tarjeta a editar
+  // (o resetea el formulario si es una tarjeta nueva).
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialCard) {
+      setText(initialCard.text || '');
+      setCategory(initialCard.category || CATEGORY_LIST[0]);
+      setEmoji(initialCard.emoji || '');
+      setImageUrl(initialCard.imageUrl || '');
+      setIsPublic(Boolean(initialCard.isPublic));
+    } else {
+      setText('');
+      setCategory(CATEGORY_LIST[0]);
+      setEmoji('');
+      setImageUrl('');
+      setIsPublic(false);
+    }
+  }, [isOpen, initialCard]);
 
-  const resetForm = () => {
-    setText('');
-    setCategory(CATEGORY_LIST[0]);
-    setEmoji('');
-    setImageUrl('');
-    setIsPublic(false);
-  };
+  if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!text.trim()) return;
     onSubmit({ text: text.trim(), category, emoji, imageUrl, isPublic });
-    resetForm();
     onClose();
   };
 
@@ -49,7 +62,7 @@ export default function AddCardModal({ isOpen, onClose, onSubmit }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id="add-card-title" className="text-xl font-bold">
-            Añadir nueva tarjeta
+            {isEditMode ? 'Editar tarjeta' : 'Añadir nueva tarjeta'}
           </h2>
           <button type="button" onClick={onClose} aria-label="Cerrar">
             <X size={24} />
@@ -143,7 +156,7 @@ export default function AddCardModal({ isOpen, onClose, onSubmit }) {
               type="submit"
               className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white"
             >
-              Guardar tarjeta
+              {isEditMode ? 'Guardar cambios' : 'Guardar tarjeta'}
             </button>
           </div>
         </form>
