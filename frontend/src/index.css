@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilo de foco visible reforzado: crítico para accesibilidad con teclado/pulsadores */
+:focus-visible {
+  outline: 4px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Tema de alto contraste: fuerza fondo negro / texto blanco / bordes marcados */
+.theme-high-contrast {
+  background-color: #000000;
+  color: #ffffff;
+}
+.theme-high-contrast button,
+.theme-high-contrast .card {
+  border: 3px solid #ffffff !important;
+}
+
+/* Respeta la preferencia del sistema de reducir movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
