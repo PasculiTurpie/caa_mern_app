@@ -6,10 +6,11 @@ import DwellDetector from '../accessibility/DwellDetector';
  * CardItem: representa una tarjeta/pictograma individual dentro del CardGrid.
  * Aplica el color de la Clave Fitzgerald según su categoría, y soporta
  * resaltado de escaneo (`isScanning`) y selección por tiempo de morada
- * (a través de DwellDetector). Si `canEdit` es true (el usuario es el
- * creador de la tarjeta), muestra botones de editar y eliminar en la esquina.
+ * (a través de DwellDetector). Los botones de editar/eliminar solo se
+ * muestran si `canManage` es true (el usuario es el creador, o un
+ * tutor/terapeuta con permiso sobre el equipo de cuidado del creador).
  */
-export default function CardItem({ card, onSelect, onEdit, onDelete, canEdit, isScanning }) {
+export default function CardItem({ card, onSelect, onEdit, onDelete, canManage, isScanning }) {
   const styles = getCategoryStyles(card.category);
 
   const handleEditClick = (e) => {
@@ -49,8 +50,8 @@ export default function CardItem({ card, onSelect, onEdit, onDelete, canEdit, is
           aria-pressed={isScanning}
           {...handlers}
         >
-          {/* Botones de editar/eliminar: solo visibles para el creador de la tarjeta */}
-          {canEdit && (
+          {/* Botones de editar/eliminar: solo si el usuario tiene permiso sobre esta tarjeta */}
+          {canManage && (
             <div className="absolute right-1.5 top-1.5 z-10 flex gap-1">
               <button
                 type="button"

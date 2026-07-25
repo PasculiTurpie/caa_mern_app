@@ -6,10 +6,10 @@ import CardItem from './CardItem';
  * para resaltar automáticamente cada tarjeta en modo escaneo secuencial,
  * permitiendo selección con un único pulsador (Espacio/Enter).
  *
- * `currentUserId` se usa para determinar qué tarjetas puede editar el
- * usuario (solo las que él mismo creó, según la regla del backend).
+ * `canManageCard(card)` decide, tarjeta por tarjeta, si se muestran los
+ * botones de editar/eliminar (ver la regla de roles en CommunicatorPage).
  */
-export default function CardGrid({ cards, onCardSelect, onCardEdit, onCardDelete, currentUserId }) {
+export default function CardGrid({ cards, onCardSelect, onCardEdit, onCardDelete, canManageCard }) {
   if (cards.length === 0) {
     return (
       <p className="p-8 text-center text-gray-500" role="status">
@@ -33,7 +33,7 @@ export default function CardGrid({ cards, onCardSelect, onCardEdit, onCardDelete
               onSelect={onCardSelect}
               onEdit={onCardEdit}
               onDelete={onCardDelete}
-              canEdit={Boolean(currentUserId) && card.creator === currentUserId}
+              canManage={canManageCard ? canManageCard(card) : true}
               isScanning={activeIndex === index}
             />
           ))}

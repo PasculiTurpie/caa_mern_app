@@ -8,14 +8,155 @@
   outline-offset: 2px;
 }
 
-/* Tema de alto contraste: fuerza fondo negro / texto blanco / bordes marcados */
-.theme-high-contrast {
+/* Tema oscuro: sobreescribe las utilidades de Tailwind que usan las páginas
+   y componentes (bg-gray-50, bg-white, textos y bordes grises). Sin esto,
+   los contenedores internos (que usan esas clases) pintan por encima del
+   fondo del <html>, y el cambio de tema no se percibe visualmente. */
+html.dark {
+  color-scheme: dark;
+}
+html.dark body,
+html.dark .bg-gray-50 {
+  background-color: #0f172a;
+}
+html.dark .bg-white {
+  background-color: #1e293b;
+}
+html.dark .bg-gray-100 {
+  background-color: #1e293b;
+}
+html.dark .bg-gray-200 {
+  background-color: #334155;
+}
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+  color: #e2e8f0;
+}
+html.dark .text-gray-500,
+html.dark .text-gray-400 {
+  color: #94a3b8;
+}
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300 {
+  border-color: #334155;
+}
+
+/* Tarjetas de la Clave Fitzgerald en tema oscuro: se oscurece el fondo de
+   cada categoría (en vez de dejar el pastel original, que "flota" sobre un
+   fondo oscuro) y se aclara el texto para mantener buen contraste. El color
+   de cada categoría se conserva para no perder la codificación visual. */
+html.dark .bg-yellow-300 {
+  background-color: #713f12;
+}
+html.dark .bg-green-400 {
+  background-color: #14532d;
+}
+html.dark .bg-orange-400 {
+  background-color: #7c2d12;
+}
+html.dark .bg-red-400 {
+  background-color: #7f1d1d;
+}
+html.dark .bg-purple-400 {
+  background-color: #581c87;
+}
+html.dark .bg-sky-400 {
+  background-color: #0c4a6e;
+}
+html.dark .bg-teal-400 {
+  background-color: #134e4a;
+}
+html.dark .bg-pink-400 {
+  background-color: #831843;
+}
+html.dark .bg-stone-300 {
+  background-color: #44403c;
+}
+html.dark .text-yellow-950 {
+  color: #fef08a;
+}
+html.dark .text-green-950 {
+  color: #bbf7d0;
+}
+html.dark .text-orange-950 {
+  color: #fed7aa;
+}
+html.dark .text-red-950 {
+  color: #fecaca;
+}
+html.dark .text-purple-950 {
+  color: #e9d5ff;
+}
+html.dark .text-sky-950 {
+  color: #bae6fd;
+}
+html.dark .text-teal-950 {
+  color: #99f6e4;
+}
+html.dark .text-pink-950 {
+  color: #fbcfe8;
+}
+html.dark .text-stone-950 {
+  color: #e7e5e4;
+}
+
+/* Tema de alto contraste: fuerza fondo negro / texto blanco / bordes marcados
+   en toda la interfaz, incluyendo los contenedores internos que de otra
+   forma pintarían su propio fondo claro por encima. */
+html.theme-high-contrast {
   background-color: #000000;
   color: #ffffff;
 }
-.theme-high-contrast button,
-.theme-high-contrast .card {
+html.theme-high-contrast body,
+html.theme-high-contrast .bg-gray-50,
+html.theme-high-contrast .bg-white,
+html.theme-high-contrast .bg-gray-100,
+html.theme-high-contrast .bg-gray-200 {
+  background-color: #000000 !important;
+}
+html.theme-high-contrast .text-gray-800,
+html.theme-high-contrast .text-gray-700,
+html.theme-high-contrast .text-gray-600,
+html.theme-high-contrast .text-gray-500,
+html.theme-high-contrast .text-gray-400 {
+  color: #ffffff !important;
+}
+html.theme-high-contrast button {
   border: 3px solid #ffffff !important;
+}
+html.theme-high-contrast .card {
+  /* Se engrosa el borde pero se conserva su color de categoría (Clave
+     Fitzgerald) para que la tarjeta siga siendo identificable por color,
+     mientras que el fondo/texto pasan a blanco y negro puros abajo. */
+  border-width: 4px !important;
+}
+
+/* Tarjetas de la Clave Fitzgerald en alto contraste: fondo negro y texto
+   blanco puros para maximizar la legibilidad; el color de cada categoría
+   se conserva únicamente en el borde (ver regla .card arriba). */
+html.theme-high-contrast .bg-yellow-300,
+html.theme-high-contrast .bg-green-400,
+html.theme-high-contrast .bg-orange-400,
+html.theme-high-contrast .bg-red-400,
+html.theme-high-contrast .bg-purple-400,
+html.theme-high-contrast .bg-sky-400,
+html.theme-high-contrast .bg-teal-400,
+html.theme-high-contrast .bg-pink-400,
+html.theme-high-contrast .bg-stone-300 {
+  background-color: #000000 !important;
+}
+html.theme-high-contrast .text-yellow-950,
+html.theme-high-contrast .text-green-950,
+html.theme-high-contrast .text-orange-950,
+html.theme-high-contrast .text-red-950,
+html.theme-high-contrast .text-purple-950,
+html.theme-high-contrast .text-sky-950,
+html.theme-high-contrast .text-teal-950,
+html.theme-high-contrast .text-pink-950,
+html.theme-high-contrast .text-stone-950 {
+  color: #ffffff !important;
 }
 
 /* Respeta la preferencia del sistema de reducir movimiento */

@@ -33,6 +33,26 @@ const userSchema = new mongoose.Schema(
       enum: ['paciente', 'tutor', 'terapeuta'],
       default: 'paciente',
     },
+    // "Equipo de cuidado": vínculo bidireccional entre un paciente y sus
+    // tutores/terapeutas (o entre varios profesionales de un mismo paciente).
+    // Se usa tanto para decidir qué tarjetas privadas puede VER un usuario
+    // como para decidir quién puede EDITAR/ELIMINAR tarjetas ajenas.
+    linkedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    // Código temporal que este usuario puede compartir para que otro
+    // (tutor, terapeuta o paciente) se vincule con él desde /api/links/connect.
+    inviteCode: {
+      type: String,
+      default: null,
+    },
+    inviteCodeExpires: {
+      type: Date,
+      default: null,
+    },
     accessibilityPreferences: {
       scanSpeed: {
         type: Number, // milisegundos entre resaltados en el escaneo secuencial

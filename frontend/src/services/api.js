@@ -37,4 +37,10 @@ export const addCardToBoardRequest = (boardId, cardId) =>
   api.put(`/boards/${boardId}/add-card/${cardId}`);
 export const deleteBoardRequest = (id) => api.delete(`/boards/${id}`);
 
+// --- Vinculación (equipo de cuidado: paciente / tutor / terapeuta) ---
+export const generateInviteCodeRequest = () => api.post('/links/invite-code');
+export const connectWithCodeRequest = (code) => api.post('/links/connect', { code });
+export const getLinkedUsersRequest = () => api.get('/links');
+export const removeLinkRequest = (userId) => api.delete(`/links/${userId}`);
+
 export default api;

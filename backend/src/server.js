@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import boardRoutes from './routes/boardRoutes.js';
 import cardRoutes from './routes/cardRoutes.js';
+import linkRoutes from './routes/linkRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 dotenv.config();
@@ -30,6 +31,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/cards', cardRoutes);
+app.use('/api/links', linkRoutes);
 
 // Manejo de rutas no encontradas y errores centralizado (siempre al final)
 app.use(notFound);

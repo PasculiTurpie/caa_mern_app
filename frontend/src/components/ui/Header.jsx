@@ -1,12 +1,12 @@
-import { Settings, Plus, LogOut, MessageSquareText } from 'lucide-react';
+import { Settings, Plus, LogOut, MessageSquareText, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 /**
  * Header: barra superior con el nombre de la app, y accesos rápidos
- * a ajustes de accesibilidad, añadir tarjeta y cerrar sesión.
+ * a ajustes de accesibilidad, añadir tarjeta, equipo de cuidado y cerrar sesión.
  * Todos los botones son grandes y tienen etiquetas accesibles (aria-label).
  */
-export default function Header({ onOpenSettings, onOpenAddCard }) {
+export default function Header({ onOpenSettings, onOpenAddCard, onOpenCareTeam }) {
   const { user, logout } = useAuth();
 
   return (
@@ -26,6 +26,15 @@ export default function Header({ onOpenSettings, onOpenAddCard }) {
           className="rounded-xl bg-green-100 p-3 text-green-700 hover:bg-green-200"
         >
           <Plus size={22} />
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenCareTeam}
+          aria-label="Abrir equipo de cuidado"
+          className="rounded-xl bg-purple-100 p-3 text-purple-700 hover:bg-purple-200"
+        >
+          <Users size={22} />
         </button>
 
         <button

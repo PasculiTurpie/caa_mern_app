@@ -5,6 +5,7 @@ import CategoryFilter from '../components/communicator/CategoryFilter';
 import CardGrid from '../components/communicator/CardGrid';
 import AddCardModal from '../components/modals/AddCardModal';
 import SettingsModal from '../components/modals/SettingsModal';
+import CareTeamModal from '../components/modals/CareTeamModal';
 import Toast from '../components/ui/Toast';
 import {
   getCardsRequest,
@@ -27,6 +28,7 @@ export default function CommunicatorPage() {
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null); // null = modo "crear"
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCareTeamOpen, setIsCareTeamOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -84,9 +86,12 @@ export default function CommunicatorPage() {
         setCards((prev) => [data, ...prev]);
         setToast({ message: 'Tarjeta creada correctamente', type: 'success' });
       }
-    } catch {
+    } catch (error) {
+      const backendMessage = error.response?.data?.message;
       setToast({
-        message: editingCard ? 'No se pudo actualizar la tarjeta' : 'No se pudo crear la tarjeta',
+        message:
+          backendMessage ||
+          (editingCard ? 'No se pudo actualizar la tarjeta' : 'No se pudo crear la tarjeta'),
         type: 'error',
       });
     }
@@ -102,14 +107,29 @@ export default function CommunicatorPage() {
       setCards((prev) => prev.filter((c) => c._id !== card._id));
       setSelectedCards((prev) => prev.filter((c) => c._id !== card._id));
       setToast({ message: 'Tarjeta eliminada correctamente', type: 'success' });
-    } catch {
-      setToast({ message: 'No se pudo eliminar la tarjeta', type: 'error' });
+    } catch (error) {
+      const backendMessage = error.response?.data?.message;
+      setToast({ message: backendMessage || 'No se pudo eliminar la tarjeta', type: 'error' });
     }
+  };
+
+  // Regla de UI que refleja la del backend (ver cardController.canManageCard):
+  // el dueño siempre puede gestionar su tarjeta; un paciente solo gestiona
+  // las suyas; tutor/terapeuta puede gestionar además las de su equipo vinculado.
+  const canManageCard = (card) => {
+    if (!user) return false;
+    if (card.creator === user._id) return true;
+    if (user.role === 'paciente') return false;
+    return true; // el backend valida el vínculo real; si no corresponde, mostrará el error
   };
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
-      <Header onOpenSettings={() => setIsSettingsOpen(true)} onOpenAddCard={handleOpenAddCard} />
+      <Header
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenAddCard={handleOpenAddCard}
+        onOpenCareTeam={() => setIsCareTeamOpen(true)}
+      />
 
       <PhraseBar
         selectedCards={selectedCards}
@@ -130,7 +150,7 @@ export default function CommunicatorPage() {
             onCardSelect={handleSelectCard}
             onCardEdit={handleOpenEditCard}
             onCardDelete={handleDeleteCard}
-            currentUserId={user?._id}
+            canManageCard={canManageCard}
           />
         )}
       </main>
@@ -143,6 +163,8 @@ export default function CommunicatorPage() {
       />
 
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+      <CareTeamModal isOpen={isCareTeamOpen} onClose={() => setIsCareTeamOpen(false)} />
 
       <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
     </div>

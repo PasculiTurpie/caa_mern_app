@@ -15,7 +15,17 @@ const cardSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ['sujeto', 'accion', 'objeto', 'necesidad', 'sentimiento', 'lugar'],
+      enum: [
+        'sujeto',
+        'accion',
+        'objeto',
+        'necesidad',
+        'sentimiento',
+        'lugar',
+        'cortesia',
+        'humor',
+        'conector',
+      ],
     },
     emoji: {
       type: String,
