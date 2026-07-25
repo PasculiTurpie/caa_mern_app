@@ -1,5 +1,5 @@
 import express from 'express';
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
@@ -13,10 +13,31 @@ connectDB();
 
 const app = express();
 
-// CORS: permite peticiones desde el frontend (Vite dev server u origen configurado)
+// CORS: permite peticiones desde el/los frontend(s) configurados.
+// CLIENT_URL admite varias URLs separadas por coma (ej. la URL de
+// producción de Vercel + una URL de deploy específico), y siempre se
+// incluye localhost para poder seguir usando `npm run dev` en el frontend
+// aunque el backend esté desplegado. Además, se acepta automáticamente
+// cualquier subdominio *.vercel.app para que los deploys de preview
+// (una URL nueva por cada push) funcionen sin tener que actualizar la
+// variable de entorno cada vez.
+const allowedOrigins = [
+  'http://localhost:5173',
+  ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map((url) => url.trim()) : []),
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Sin "origin" (ej. Postman, curl, health checks) → se permite
+      if (!origin) return callback(null, true);
+
+      const isAllowed =
+        allowedOrigins.includes(origin) || /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin);
+
+      if (isAllowed) return callback(null, true);
+      return callback(new Error(`Origen no permitido por CORS: ${origin}`));
+    },
     credentials: true,
   })
 );
