@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
+import { LayoutGrid, Keyboard } from 'lucide-react';
 import Header from '../components/ui/Header';
 import PhraseBar from '../components/communicator/PhraseBar';
 import CategoryFilter from '../components/communicator/CategoryFilter';
 import CardGrid from '../components/communicator/CardGrid';
+import VirtualKeyboard from '../components/communicator/VirtualKeyboard';
 import AddCardModal from '../components/modals/AddCardModal';
 import SettingsModal from '../components/modals/SettingsModal';
 import CareTeamModal from '../components/modals/CareTeamModal';
@@ -25,6 +27,7 @@ export default function CommunicatorPage() {
   const [cards, setCards] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [selectedCards, setSelectedCards] = useState([]);
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'keyboard'
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null); // null = modo "crear"
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -57,6 +60,16 @@ export default function CommunicatorPage() {
   };
 
   const handleClearPhrase = () => setSelectedCards([]);
+
+  // Agrega el texto escrito con el teclado como un elemento más de la frase,
+  // igual que si fuera una tarjeta (así se lee junto con el resto al presionar
+  // "Hablar" en la barra de frase, y se puede quitar tocándolo).
+  const handleAddTypedPhrase = (typedText) => {
+    setSelectedCards((prev) => [
+      ...prev,
+      { _id: `typed-${Date.now()}`, text: typedText, category: null, emoji: '⌨️' },
+    ]);
+  };
 
   const handleOpenAddCard = () => {
     setEditingCard(null); // asegura que el modal abra en modo "crear"
@@ -137,10 +150,39 @@ export default function CommunicatorPage() {
         onRemoveCard={handleRemoveFromPhrase}
       />
 
-      <CategoryFilter activeCategory={activeCategory} onChange={setActiveCategory} />
+      <div className="flex items-center justify-center gap-2 border-b-2 border-gray-100 bg-white py-2">
+        <button
+          type="button"
+          onClick={() => setViewMode('cards')}
+          aria-pressed={viewMode === 'cards'}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 font-semibold ${
+            viewMode === 'cards' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          <LayoutGrid size={18} aria-hidden="true" />
+          Tarjetas
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('keyboard')}
+          aria-pressed={viewMode === 'keyboard'}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 font-semibold ${
+            viewMode === 'keyboard' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'
+          }`}
+        >
+          <Keyboard size={18} aria-hidden="true" />
+          Teclado
+        </button>
+      </div>
+
+      {viewMode === 'cards' && (
+        <CategoryFilter activeCategory={activeCategory} onChange={setActiveCategory} />
+      )}
 
       <main className="flex-1">
-        {loading ? (
+        {viewMode === 'keyboard' ? (
+          <VirtualKeyboard onAddToPhrase={handleAddTypedPhrase} />
+        ) : loading ? (
           <p className="p-8 text-center text-gray-500" role="status">
             Cargando tarjetas...
           </p>

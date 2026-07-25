@@ -21,7 +21,6 @@ const app = express();
 // cualquier subdominio *.vercel.app para que los deploys de preview
 // (una URL nueva por cada push) funcionen sin tener que actualizar la
 // variable de entorno cada vez.
-// backend/src/server.js
 const allowedOrigins = [
   'http://localhost:5173',
   ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map((url) => url.trim()) : []),
@@ -30,9 +29,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Sin "origin" (ej. Postman, curl, health checks) → se permite
       if (!origin) return callback(null, true);
+
       const isAllowed =
         allowedOrigins.includes(origin) || /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin);
+
       if (isAllowed) return callback(null, true);
       return callback(new Error(`Origen no permitido por CORS: ${origin}`));
     },
