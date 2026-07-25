@@ -8,7 +8,7 @@ el stack MERN (MongoDB, Express, React, Node.js).
 
 - **Clave Fitzgerald**: colores de tarjeta por categoría gramatical/funcional
   (sujeto, acción, objeto, urgencia, emoción, lugar, social/cortesía, frases
-  chistosas y conectores/artículos).
+  chistosas, conectores/artículos y comidas).
 - **Escaneo secuencial (Switch Access)**: resalta automáticamente cada
   tarjeta; selección con un pulsador (tecla Espacio o Enter).
 - **Tiempo de morada (Dwell Time)**: selección al mantener el puntero/mirada

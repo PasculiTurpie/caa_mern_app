@@ -58,9 +58,10 @@ export default function AddCardModal({ isOpen, onClose, onSubmit, initialCard = 
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-card-title"
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+        className="flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl bg-white shadow-xl"
       >
-        <div className="mb-4 flex items-center justify-between">
+        {/* Encabezado: fijo, no se desplaza con el contenido */}
+        <div className="flex items-center justify-between p-6 pb-4">
           <h2 id="add-card-title" className="text-xl font-bold">
             {isEditMode ? 'Editar tarjeta' : 'Añadir nueva tarjeta'}
           </h2>
@@ -69,82 +70,89 @@ export default function AddCardModal({ isOpen, onClose, onSubmit, initialCard = 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1">
-            <span className="font-semibold">Texto de la tarjeta</span>
-            <input
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              required
-              className="rounded-lg border-2 border-gray-300 p-2"
-              placeholder="Ej: Quiero agua"
-            />
-          </label>
+        {/* El formulario ocupa el espacio restante; el contenido central
+            hace scroll si no cabe, pero los botones de abajo quedan
+            siempre visibles (no se pierden en pantallas pequeñas). */}
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6">
+            <label className="flex flex-col gap-1">
+              <span className="font-semibold">Texto de la tarjeta</span>
+              <input
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                required
+                className="rounded-lg border-2 border-gray-300 p-2"
+                placeholder="Ej: Quiero agua"
+              />
+            </label>
 
-          <fieldset className="flex flex-col gap-2">
-            <legend className="font-semibold">Categoría</legend>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORY_LIST.map((cat) => {
-                const styles = getCategoryStyles(cat);
-                return (
-                  <label
-                    key={cat}
-                    className={`cursor-pointer rounded-full border-2 px-3 py-1.5 text-sm font-semibold ${
-                      styles.bg
-                    } ${styles.text} ${
-                      category === cat ? 'ring-2 ring-offset-1 ring-blue-600' : ''
-                    } ${styles.border}`}
-                  >
-                    <input
-                      type="radio"
-                      name="category"
-                      value={cat}
-                      checked={category === cat}
-                      onChange={() => setCategory(cat)}
-                      className="sr-only"
-                    />
-                    {styles.label}
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
+            <fieldset className="flex flex-col gap-2">
+              <legend className="font-semibold">Categoría</legend>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORY_LIST.map((cat) => {
+                  const styles = getCategoryStyles(cat);
+                  return (
+                    <label
+                      key={cat}
+                      className={`cursor-pointer rounded-full border-2 px-3 py-1.5 text-sm font-semibold ${
+                        styles.bg
+                      } ${styles.text} ${
+                        category === cat ? 'ring-2 ring-offset-1 ring-blue-600' : ''
+                      } ${styles.border}`}
+                    >
+                      <input
+                        type="radio"
+                        name="category"
+                        value={cat}
+                        checked={category === cat}
+                        onChange={() => setCategory(cat)}
+                        className="sr-only"
+                      />
+                      {styles.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
 
-          <label className="flex flex-col gap-1">
-            <span className="font-semibold">Emoji (opcional)</span>
-            <input
-              type="text"
-              value={emoji}
-              onChange={(e) => setEmoji(e.target.value)}
-              maxLength={4}
-              className="w-24 rounded-lg border-2 border-gray-300 p-2 text-2xl"
-              placeholder="💧"
-            />
-          </label>
+            <label className="flex flex-col gap-1">
+              <span className="font-semibold">Emoji (opcional)</span>
+              <input
+                type="text"
+                value={emoji}
+                onChange={(e) => setEmoji(e.target.value)}
+                maxLength={4}
+                className="w-24 rounded-lg border-2 border-gray-300 p-2 text-2xl"
+                placeholder="💧"
+              />
+            </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="font-semibold">URL de imagen personalizada (opcional)</span>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="rounded-lg border-2 border-gray-300 p-2"
-              placeholder="https://..."
-            />
-          </label>
+            <label className="flex flex-col gap-1">
+              <span className="font-semibold">URL de imagen personalizada (opcional)</span>
+              <input
+                type="url"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="rounded-lg border-2 border-gray-300 p-2"
+                placeholder="https://..."
+              />
+            </label>
 
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="h-5 w-5"
-            />
-            <span>Hacer esta tarjeta pública (visible para otros usuarios)</span>
-          </label>
+            <label className="flex items-center gap-2 pb-4">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="h-5 w-5"
+              />
+              <span>Hacer esta tarjeta pública (visible para otros usuarios)</span>
+            </label>
+          </div>
 
-          <div className="mt-2 flex justify-end gap-2">
+          {/* Pie: fijo, siempre visible aunque el contenido de arriba
+              necesite scroll (pantallas chicas o muchas categorías). */}
+          <div className="flex justify-end gap-2 border-t-2 border-gray-100 p-6 pt-4">
             <button
               type="button"
               onClick={onClose}

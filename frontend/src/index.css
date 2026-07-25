@@ -74,6 +74,9 @@ html.dark .bg-pink-400 {
 html.dark .bg-stone-300 {
   background-color: #44403c;
 }
+html.dark .bg-lime-400 {
+  background-color: #365314;
+}
 html.dark .text-yellow-950 {
   color: #fef08a;
 }
@@ -100,6 +103,9 @@ html.dark .text-pink-950 {
 }
 html.dark .text-stone-950 {
   color: #e7e5e4;
+}
+html.dark .text-lime-950 {
+  color: #d9f99d;
 }
 
 /* Tema de alto contraste: fuerza fondo negro / texto blanco / bordes marcados
@@ -144,7 +150,8 @@ html.theme-high-contrast .bg-purple-400,
 html.theme-high-contrast .bg-sky-400,
 html.theme-high-contrast .bg-teal-400,
 html.theme-high-contrast .bg-pink-400,
-html.theme-high-contrast .bg-stone-300 {
+html.theme-high-contrast .bg-stone-300,
+html.theme-high-contrast .bg-lime-400 {
   background-color: #000000 !important;
 }
 html.theme-high-contrast .text-yellow-950,
@@ -155,7 +162,8 @@ html.theme-high-contrast .text-purple-950,
 html.theme-high-contrast .text-sky-950,
 html.theme-high-contrast .text-teal-950,
 html.theme-high-contrast .text-pink-950,
-html.theme-high-contrast .text-stone-950 {
+html.theme-high-contrast .text-stone-950,
+html.theme-high-contrast .text-lime-950 {
   color: #ffffff !important;
 }
 

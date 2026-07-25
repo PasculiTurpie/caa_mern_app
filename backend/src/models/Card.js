@@ -25,6 +25,7 @@ const cardSchema = new mongoose.Schema(
         'cortesia',
         'humor',
         'conector',
+        'comida',
       ],
     },
     emoji: {

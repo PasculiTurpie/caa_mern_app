@@ -123,6 +123,28 @@ const defaultCards = [
   { text: 'Fuera de', category: 'conector', emoji: '🚪' },
   { text: 'Antes de', category: 'conector', emoji: '⏮️' },
   { text: 'Después de', category: 'conector', emoji: '⏭️' },
+
+  // --- Comidas ---
+  { text: 'Pan', category: 'comida', emoji: '🍞' },
+  { text: 'Leche', category: 'comida', emoji: '🥛' },
+  { text: 'Fruta', category: 'comida', emoji: '🍎' },
+  { text: 'Verdura', category: 'comida', emoji: '🥦' },
+  { text: 'Arroz', category: 'comida', emoji: '🍚' },
+  { text: 'Pollo', category: 'comida', emoji: '🍗' },
+  { text: 'Carne', category: 'comida', emoji: '🥩' },
+  { text: 'Pescado', category: 'comida', emoji: '🐟' },
+  { text: 'Huevo', category: 'comida', emoji: '🥚' },
+  { text: 'Queso', category: 'comida', emoji: '🧀' },
+  { text: 'Yogurt', category: 'comida', emoji: '🥣' },
+  { text: 'Sopa', category: 'comida', emoji: '🍲' },
+  { text: 'Ensalada', category: 'comida', emoji: '🥗' },
+  { text: 'Jugo', category: 'comida', emoji: '🧃' },
+  { text: 'Galleta', category: 'comida', emoji: '🍪' },
+  { text: 'Chocolate', category: 'comida', emoji: '🍫' },
+  { text: 'Pizza', category: 'comida', emoji: '🍕' },
+  { text: 'Sándwich', category: 'comida', emoji: '🥪' },
+  { text: 'Cereal', category: 'comida', emoji: '🥣' },
+  { text: 'Helado', category: 'comida', emoji: '🍦' },
 ];
 
 export default defaultCards;

@@ -64,6 +64,12 @@ export const FITZGERALD_CATEGORIES = {
     border: 'border-stone-500',
     text: 'text-stone-950',
   },
+  comida: {
+    label: 'Comidas',
+    bg: 'bg-lime-400',
+    border: 'border-lime-600',
+    text: 'text-lime-950',
+  },
 };
 
 /**
