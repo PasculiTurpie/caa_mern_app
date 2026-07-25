@@ -23,6 +23,7 @@ const app = express();
 // variable de entorno cada vez.
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5000/api',
   ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map((url) => url.trim()) : []),
 ];
 
