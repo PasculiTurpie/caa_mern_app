@@ -117,7 +117,7 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-3">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-3">
       <label className="flex flex-col gap-1">
         <span className="font-semibold text-gray-700">Escribe tu frase</span>
         <input
@@ -125,7 +125,7 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Escribe aquí o usa el teclado en pantalla..."
-          className="rounded-xl border-2 border-gray-300 p-3 text-xl"
+          className="rounded-xl border-2 border-gray-300 p-3 text-base sm:text-xl"
           aria-label="Frase que estás escribiendo"
         />
       </label>
@@ -148,9 +148,13 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
                       key={key.id}
                       type="button"
                       onClick={key.action}
-                      className={`rounded-full border-2 border-blue-400 bg-white px-3 py-1.5 font-semibold text-blue-700 hover:bg-blue-100 ${
+                      className={`rounded-full border-2 border-blue-400 bg-white font-semibold text-blue-700 hover:bg-blue-100 ${
                         activeKey?.id === key.id ? 'ring-4 ring-offset-1 ring-blue-600 scale-105' : ''
                       }`}
+                      style={{
+                        padding: 'clamp(0.35rem, 1.5vw, 0.5rem) clamp(0.6rem, 2.5vw, 0.9rem)',
+                        fontSize: 'clamp(0.85rem, 2.5vw, 1rem)',
+                      }}
                     >
                       {key.label}
                     </button>
@@ -161,7 +165,7 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
               {/* Filas de letras */}
               <div className="flex flex-col gap-2">
                 {LETTER_ROWS.map((row, rowIndex) => (
-                  <div key={rowIndex} className="flex flex-wrap justify-center gap-1.5">
+                  <div key={rowIndex} className="flex flex-wrap justify-center gap-[clamp(0.2rem,1vw,0.4rem)]">
                     {row.map((letter) => {
                       const key = letterKeys.find((k) => k.label === letter);
                       return (
@@ -169,9 +173,13 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
                           key={letter}
                           type="button"
                           onClick={key.action}
-                          className={`h-12 w-12 rounded-lg border-2 border-gray-300 bg-white text-lg font-bold text-gray-800 hover:bg-blue-50 ${
+                          className={`aspect-square rounded-lg border-2 border-gray-300 bg-white font-bold text-gray-800 hover:bg-blue-50 ${
                             activeKey?.id === key.id ? 'ring-4 ring-offset-1 ring-blue-600 scale-105' : ''
                           }`}
+                          style={{
+                            width: 'clamp(2.1rem, 8vw, 3.25rem)',
+                            fontSize: 'clamp(0.9rem, 3vw, 1.25rem)',
+                          }}
                           aria-pressed={activeKey?.id === key.id}
                         >
                           {letter}
@@ -183,7 +191,7 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
               </div>
 
               {/* Fila de acciones: espacio, borrar, hablar, agregar */}
-              <div className="mt-1 flex flex-wrap justify-center gap-2">
+              <div className="mt-1 flex flex-wrap justify-center gap-[clamp(0.3rem,1.2vw,0.5rem)]">
                 {actionKeys.map((key) => {
                   const Icon = key.icon;
                   const isPrimary = key.kind === 'action' && (key.id === 'add' || key.id === 'speak');
@@ -193,15 +201,26 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
                       type="button"
                       onClick={key.action}
                       aria-label={key.label}
-                      className={`flex items-center gap-2 rounded-xl border-2 px-4 py-3 font-semibold ${
+                      className={`flex items-center gap-2 rounded-xl border-2 font-semibold ${
                         isPrimary
                           ? 'border-blue-600 bg-blue-600 text-white'
                           : 'border-gray-300 bg-white text-gray-700'
                       } ${
                         activeKey?.id === key.id ? 'ring-4 ring-offset-1 ring-blue-600 scale-105' : ''
                       }`}
+                      style={{
+                        padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1.25rem)',
+                        fontSize: 'clamp(0.8rem, 2.2vw, 1rem)',
+                      }}
                     >
-                      {Icon ? <Icon size={20} aria-hidden="true" /> : <span aria-hidden="true">␣</span>}
+                      {Icon ? (
+                        <Icon
+                          className="h-[clamp(1rem,3.5vw,1.25rem)] w-[clamp(1rem,3.5vw,1.25rem)]"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <span aria-hidden="true">␣</span>
+                      )}
                       {key.label}
                     </button>
                   );
