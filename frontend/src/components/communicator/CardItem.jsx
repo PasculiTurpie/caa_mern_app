@@ -50,14 +50,17 @@ export default function CardItem({ card, onSelect, onEdit, onDelete, canManage, 
           aria-pressed={isScanning}
           {...handlers}
         >
-          {/* Botones de editar/eliminar: solo si el usuario tiene permiso sobre esta tarjeta */}
+          {/* Botones de editar/eliminar: solo si el usuario tiene permiso sobre esta tarjeta.
+              Se usa un color sólido (no blanco translúcido) con anillo blanco de separación,
+              para que se vean igual de bien sobre cualquier color de categoría y en
+              cualquier tema (claro, oscuro o alto contraste) sin necesitar reglas extra. */}
           {canManage && (
-            <div className="absolute right-1.5 top-1.5 z-10 flex gap-1">
+            <div className="absolute right-1.5 top-1.5 z-10 flex gap-1.5">
               <button
                 type="button"
                 onClick={handleEditClick}
                 aria-label={`Editar tarjeta ${card.text}`}
-                className="rounded-full bg-white/90 p-1.5 text-gray-700 shadow hover:bg-white"
+                className="rounded-full bg-blue-600 p-1.5 text-white ring-2 ring-white hover:bg-blue-700"
               >
                 <Pencil size={16} aria-hidden="true" />
               </button>
@@ -65,7 +68,7 @@ export default function CardItem({ card, onSelect, onEdit, onDelete, canManage, 
                 type="button"
                 onClick={handleDeleteClick}
                 aria-label={`Eliminar tarjeta ${card.text}`}
-                className="rounded-full bg-white/90 p-1.5 text-red-600 shadow hover:bg-white"
+                className="rounded-full bg-red-600 p-1.5 text-white ring-2 ring-white hover:bg-red-700"
               >
                 <Trash2 size={16} aria-hidden="true" />
               </button>
