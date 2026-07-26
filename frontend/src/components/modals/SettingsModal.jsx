@@ -89,9 +89,10 @@ export default function SettingsModal({ isOpen, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
+        className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-xl"
       >
-        <div className="mb-4 flex items-center justify-between">
+        {/* Encabezado: fijo, no se desplaza con el contenido */}
+        <div className="flex items-center justify-between p-6 pb-4">
           <h2 id="settings-title" className="text-xl font-bold">
             Ajustes de accesibilidad
           </h2>
@@ -100,7 +101,8 @@ export default function SettingsModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        <div className="flex flex-col gap-6">
+        {/* Contenido central: hace scroll si no cabe en pantallas chicas */}
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6">
           {/* Escaneo secuencial */}
           <section className="rounded-xl border-2 border-gray-200 p-4">
             <label className="flex items-center justify-between gap-2 font-semibold">
@@ -214,26 +216,26 @@ export default function SettingsModal({ isOpen, onClose }) {
               ))}
             </div>
           </section>
+        </div>
 
-          {/* Guardado explícito de todos los ajustes */}
-          <div className="flex justify-end gap-2 border-t-2 border-gray-100 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl bg-gray-200 px-4 py-3 font-semibold"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white disabled:opacity-50"
-            >
-              <Save size={20} aria-hidden="true" />
-              {saving ? 'Guardando...' : 'Guardar ajustes'}
-            </button>
-          </div>
+        {/* Pie: fijo, siempre visible aunque el contenido de arriba necesite scroll */}
+        <div className="flex justify-end gap-2 border-t-2 border-gray-100 p-6 pt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl bg-gray-200 px-4 py-3 font-semibold"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white disabled:opacity-50"
+          >
+            <Save size={20} aria-hidden="true" />
+            {saving ? 'Guardando...' : 'Guardar ajustes'}
+          </button>
         </div>
       </div>
 

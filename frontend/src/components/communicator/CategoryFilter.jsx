@@ -26,7 +26,6 @@ export default function CategoryFilter({ activeCategory, onChange }) {
       </button>
 
       {CATEGORY_LIST.map((category) => {
-        console.log(category)
         const styles = getCategoryStyles(category);
         const isActive = activeCategory === category;
         return (
