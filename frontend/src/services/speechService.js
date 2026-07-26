@@ -9,21 +9,49 @@ export const isSpeechSupported = () =>
 
 /**
  * Obtiene la lista de voces disponibles en el navegador.
- * Las voces pueden cargar de forma asíncrona, por eso se soporta el evento onvoiceschanged.
+ *
+ * Las voces cargan de forma asíncrona, y en Android/Chrome el evento
+ * `onvoiceschanged` a veces nunca se dispara (bug conocido de Chromium en
+ * Android), lo que dejaba esta función esperando para siempre y la lista
+ * de voces se veía vacía en el selector. Por eso se combinan 3 estrategias:
+ * 1) un intento inmediato, 2) el evento oficial `onvoiceschanged`, y
+ * 3) reintentos por temporizador como respaldo, con un límite de tiempo
+ * para no quedar esperando indefinidamente si el dispositivo simplemente
+ * no tiene más voces que ofrecer.
  */
 export const getAvailableVoices = () =>
   new Promise((resolve) => {
     if (!isSpeechSupported()) return resolve([]);
 
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      resolve(voices);
-      return;
-    }
+    let settled = false;
 
-    window.speechSynthesis.onvoiceschanged = () => {
-      resolve(window.speechSynthesis.getVoices());
+    const trySettle = () => {
+      if (settled) return;
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        settled = true;
+        resolve(voices);
+      }
     };
+
+    trySettle();
+    if (settled) return;
+
+    window.speechSynthesis.onvoiceschanged = trySettle;
+
+    let attempts = 0;
+    const maxAttempts = 15; // ~4.5 segundos de reintentos como respaldo
+    const interval = setInterval(() => {
+      attempts += 1;
+      trySettle();
+      if (settled || attempts >= maxAttempts) {
+        clearInterval(interval);
+        if (!settled) {
+          settled = true;
+          resolve(window.speechSynthesis.getVoices()); // puede seguir vacío; el dispositivo no ofrece más
+        }
+      }
+    }, 300);
   });
 
 /**

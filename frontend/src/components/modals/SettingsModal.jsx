@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Save } from 'lucide-react';
+import { X, Save, RefreshCw } from 'lucide-react';
 import { useAccessibility } from '../../context/AccessibilityContext';
 import { useSpeech } from '../../context/SpeechContext';
 import { useAuth } from '../../context/AuthContext';
@@ -21,6 +21,7 @@ export default function SettingsModal({ isOpen, onClose }) {
 
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [refreshingVoices, setRefreshingVoices] = useState(false);
   const [toast, setToast] = useState(null);
 
   // Al abrir el modal, inicializa el borrador con los valores actuales
@@ -45,6 +46,23 @@ export default function SettingsModal({ isOpen, onClose }) {
 
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') onClose();
+  };
+
+  // Vuelve a consultar las voces del dispositivo: útil en Android/Samsung
+  // si el usuario instaló un paquete de voz nuevo mientras la app ya
+  // estaba abierta, ya que el navegador no siempre avisa solo.
+  const handleRefreshVoices = async () => {
+    setRefreshingVoices(true);
+    const updatedVoices = await speech.refreshVoices();
+    if (updatedVoices.length === 0) {
+      setToast({
+        message: 'El dispositivo no reporta ninguna voz instalada todavía. Revisa los ajustes de Texto a voz del sistema.',
+        type: 'error',
+      });
+    } else {
+      setToast({ message: `Se encontraron ${updatedVoices.length} voces`, type: 'success' });
+    }
+    setRefreshingVoices(false);
   };
 
   // Aplica todo el borrador de una vez: actualiza los contextos locales
@@ -153,7 +171,26 @@ export default function SettingsModal({ isOpen, onClose }) {
 
           {/* Voz */}
           <section className="rounded-xl border-2 border-gray-200 p-4">
-            <h3 className="mb-2 font-semibold">Voz del sistema</h3>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="font-semibold">Voz del sistema</h3>
+              <button
+                type="button"
+                onClick={handleRefreshVoices}
+                disabled={refreshingVoices}
+                aria-label="Actualizar lista de voces"
+                className="flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={refreshingVoices ? 'animate-spin' : ''} aria-hidden="true" />
+                Actualizar voces
+              </button>
+            </div>
+            {speech.voices.length === 0 && (
+              <p className="mb-2 text-sm text-amber-600">
+                No se encontraron voces instaladas en este dispositivo. En Android, revisa
+                Ajustes del sistema → Texto a voz (Text-to-Speech) e instala un paquete de voz
+                en español.
+              </p>
+            )}
             <label className="flex flex-col gap-1 text-sm">
               Voz
               <select

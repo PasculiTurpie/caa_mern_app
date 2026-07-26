@@ -14,14 +14,19 @@ export function SpeechProvider({ children }) {
   const [pitch, setPitch] = useState(1);
   const [voiceURI, setVoiceURI] = useState('');
 
-  useEffect(() => {
-    getAvailableVoices().then((availableVoices) => {
+  const loadVoices = useCallback(() => {
+    return getAvailableVoices().then((availableVoices) => {
       setVoices(availableVoices);
       // Selecciona por defecto la primera voz en español disponible, si existe
       const spanishVoice = availableVoices.find((v) => v.lang?.startsWith('es'));
-      if (spanishVoice && !voiceURI) setVoiceURI(spanishVoice.voiceURI);
+      setVoiceURI((prev) => prev || spanishVoice?.voiceURI || '');
+      return availableVoices;
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    loadVoices();
+  }, [loadVoices]);
 
   const speak = useCallback(
     (text) => {
@@ -42,6 +47,7 @@ export function SpeechProvider({ children }) {
     setVoiceURI,
     speak,
     stop,
+    refreshVoices: loadVoices,
   };
 
   return <SpeechContext.Provider value={value}>{children}</SpeechContext.Provider>;
