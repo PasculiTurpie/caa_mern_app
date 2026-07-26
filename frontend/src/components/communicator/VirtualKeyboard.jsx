@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Delete, X, Volume2, Plus, Lightbulb } from 'lucide-react';
 import SwitchScanner from '../accessibility/SwitchScanner';
 import { useSpeech } from '../../context/SpeechContext';
@@ -29,6 +29,25 @@ const MAX_SUGGESTIONS = 5;
 export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
   const [text, setText] = useState('');
   const { speak } = useSpeech();
+  const inputRef = useRef(null);
+
+  // El cursor siempre vuelve al campo de texto: al abrir el teclado, y
+  // después de cada tecla tocada en pantalla (que de otra forma le
+  // quitaría el foco al campo, ya que son botones reales).
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const focusInput = () => {
+    // requestAnimationFrame espera a que el navegador termine de mover el
+    // foco al botón presionado, y recién ahí lo regresa al campo de texto.
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const runKeyAction = (key) => {
+    key.action();
+    focusInput();
+  };
 
   // Vocabulario combinado: palabras individuales sacadas de las tarjetas del
   // usuario (pueden ser frases completas, así que se separan por palabra)
@@ -113,7 +132,8 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
   const allKeys = [...suggestionKeys, ...letterKeys, ...actionKeys];
 
   const handleKeySelect = (index) => {
-    allKeys[index]?.action();
+    const key = allKeys[index];
+    if (key) runKeyAction(key);
   };
 
   return (
@@ -121,6 +141,7 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
       <label className="flex flex-col gap-1">
         <span className="font-semibold text-gray-700">Escribe tu frase</span>
         <input
+          ref={inputRef}
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -147,7 +168,7 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
                     <button
                       key={key.id}
                       type="button"
-                      onClick={key.action}
+                      onClick={() => runKeyAction(key)}
                       className={`rounded-full border-2 border-blue-400 bg-white font-semibold text-blue-700 hover:bg-blue-100 ${
                         activeKey?.id === key.id ? 'ring-4 ring-offset-1 ring-blue-600 scale-105' : ''
                       }`}
@@ -172,7 +193,7 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
                         <button
                           key={letter}
                           type="button"
-                          onClick={key.action}
+                          onClick={() => runKeyAction(key)}
                           className={`aspect-square rounded-lg border-2 border-gray-300 bg-white font-bold text-gray-800 hover:bg-blue-50 ${
                             activeKey?.id === key.id ? 'ring-4 ring-offset-1 ring-blue-600 scale-105' : ''
                           }`}
@@ -199,8 +220,7 @@ export default function VirtualKeyboard({ onAddToPhrase, vocabulary = [] }) {
                     <button
                       key={key.id}
                       type="button"
-                      onClick={key.action}
-                      aria-label={key.label}
+                      onClick={() => runKeyAction(key)}
                       className={`flex items-center gap-2 rounded-xl border-2 font-semibold ${
                         isPrimary
                           ? 'border-blue-600 bg-blue-600 text-white'
