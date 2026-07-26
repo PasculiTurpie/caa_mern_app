@@ -181,7 +181,7 @@ export default function CommunicatorPage() {
 
       <main className="flex-1">
         {viewMode === 'keyboard' ? (
-          <VirtualKeyboard onAddToPhrase={handleAddTypedPhrase} />
+          <VirtualKeyboard onAddToPhrase={handleAddTypedPhrase} vocabulary={cards.map((c) => c.text)} />
         ) : loading ? (
           <p className="p-8 text-center text-gray-500" role="status">
             Cargando tarjetas...
