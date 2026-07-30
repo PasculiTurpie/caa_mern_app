@@ -1,12 +1,12 @@
-import { Volume2, Trash2, Sparkles } from 'lucide-react';
+import { Volume2, Delete, Sparkles } from 'lucide-react';
 import { getCategoryStyles } from '../../utils/fitzgeraldColors';
 import { useSpeech } from '../../context/SpeechContext';
 
 /**
  * PhraseBar: muestra la secuencia de tarjetas seleccionadas por el usuario
  * ("la frase en construcción"), con botones para reproducirla en voz alta,
- * borrarla, y (opcionalmente) expandirla con IA a una frase gramaticalmente
- * completa.
+ * quitar la última tarjeta agregada (de a una), y (opcionalmente)
+ * expandirla con IA a una frase gramaticalmente completa.
  */
 export default function PhraseBar({ selectedCards, onClear, onRemoveCard, onExpandWithAI }) {
   const { speak } = useSpeech();
@@ -73,9 +73,10 @@ export default function PhraseBar({ selectedCards, onClear, onRemoveCard, onExpa
         onClick={onClear}
         disabled={selectedCards.length === 0}
         className="flex items-center gap-2 rounded-xl bg-gray-200 px-4 py-3 font-bold text-gray-700 disabled:opacity-40"
-        aria-label="Borrar frase"
+        aria-label="Quitar la última tarjeta de la frase"
+        title="Quitar la última tarjeta"
       >
-        <Trash2 size={22} aria-hidden="true" />
+        <Delete size={22} aria-hidden="true" />
       </button>
     </div>
   );

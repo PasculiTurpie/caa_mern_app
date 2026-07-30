@@ -16,6 +16,7 @@ import {
   deleteCardRequest,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { playClickSound } from '../services/soundService';
 
 /**
  * CommunicatorPage: pantalla principal de la aplicación. Combina la barra
@@ -52,6 +53,7 @@ export default function CommunicatorPage() {
   }, [activeCategory, loadCards]);
 
   const handleSelectCard = (card) => {
+    playClickSound();
     setSelectedCards((prev) => [...prev, card]);
   };
 
@@ -59,7 +61,11 @@ export default function CommunicatorPage() {
     setSelectedCards((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleClearPhrase = () => setSelectedCards([]);
+  // Quita la última tarjeta agregada a la frase, de a una por cada clic
+  // (en vez de vaciar toda la frase de una sola vez).
+  const handleRemoveLastCard = () => {
+    setSelectedCards((prev) => prev.slice(0, -1));
+  };
 
   // Agrega el texto escrito con el teclado como un elemento más de la frase,
   // igual que si fuera una tarjeta (así se lee junto con el resto al presionar
@@ -146,7 +152,7 @@ export default function CommunicatorPage() {
 
       <PhraseBar
         selectedCards={selectedCards}
-        onClear={handleClearPhrase}
+        onClear={handleRemoveLastCard}
         onRemoveCard={handleRemoveFromPhrase}
       />
 
