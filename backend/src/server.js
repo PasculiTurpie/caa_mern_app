@@ -1,6 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import boardRoutes from './routes/boardRoutes.js';
@@ -12,6 +14,22 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
+// Cabeceras de seguridad HTTP básicas (X-Content-Type-Options,
+// X-Frame-Options, quita X-Powered-By, etc.). No hay contenido servido
+// desde este backend que necesite relajar la CSP por defecto de helmet.
+app.use(helmet());
+
+// Límite de intentos de login/registro por IP, para mitigar fuerza bruta
+// sobre credenciales. Se aplica solo a /api/auth (no al resto de la API,
+// que ya requiere JWT válido vía `protect`).
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 20, // 20 intentos por IP en la ventana, suficiente para uso normal
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Demasiados intentos, intenta de nuevo más tarde' },
+});
 
 // CORS: permite peticiones desde el/los frontend(s) configurados.
 // CLIENT_URL admite varias URLs separadas por coma (ej. la URL de
@@ -49,7 +67,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'CAA API' });
 });
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/boards', boardRoutes);
 app.use('/api/cards', cardRoutes);
 app.use('/api/links', linkRoutes);

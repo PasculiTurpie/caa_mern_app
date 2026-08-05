@@ -49,9 +49,23 @@ export const getCards = async (req, res, next) => {
 };
 
 /**
+ * Determina si `user` puede VER `card` (no gestionarla): su propia tarjeta,
+ * una pública, o una creada por alguien de su equipo de cuidado vinculado.
+ * Misma regla de visibilidad que usa `getCards`, para que no se pueda
+ * esquivar el filtro pidiendo una tarjeta directamente por id.
+ */
+const canViewCard = (user, card) => {
+  const isOwner = card.creator.toString() === user._id.toString();
+  if (isOwner || card.isPublic) return true;
+
+  return (user.linkedUsers || []).some((id) => id.toString() === card.creator.toString());
+};
+
+/**
  * @desc    Obtener una tarjeta por id
  * @route   GET /api/cards/:id
- * @access  Privado
+ * @access  Privado (solo si es propia, pública, o de alguien de tu equipo
+ *          de cuidado vinculado — misma regla que la lista de tarjetas)
  */
 export const getCardById = async (req, res, next) => {
   try {
@@ -60,6 +74,12 @@ export const getCardById = async (req, res, next) => {
       res.status(404);
       throw new Error('Tarjeta no encontrada');
     }
+
+    if (!canViewCard(req.user, card)) {
+      res.status(403);
+      throw new Error('No tienes permiso para ver esta tarjeta');
+    }
+
     res.json(card);
   } catch (error) {
     next(error);
@@ -115,7 +135,16 @@ export const updateCard = async (req, res, next) => {
       throw new Error('No tienes permiso para editar esta tarjeta');
     }
 
-    Object.assign(card, req.body);
+    // Whitelist explícito de campos editables: evita que el body pueda
+    // sobrescribir `creator`, `_id` u otros campos que no debería tocar
+    // quien edita la tarjeta (mass assignment).
+    const EDITABLE_FIELDS = ['text', 'category', 'emoji', 'imageUrl', 'isPublic'];
+    for (const field of EDITABLE_FIELDS) {
+      if (field in req.body) {
+        card[field] = req.body[field];
+      }
+    }
+
     const updatedCard = await card.save();
     res.json(updatedCard);
   } catch (error) {
