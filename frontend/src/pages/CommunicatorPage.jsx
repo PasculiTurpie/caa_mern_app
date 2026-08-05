@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { LayoutGrid, Keyboard } from 'lucide-react';
+import { LayoutGrid, Keyboard, Star } from 'lucide-react';
 import Header from '../components/ui/Header';
 import PhraseBar from '../components/communicator/PhraseBar';
 import CategoryFilter from '../components/communicator/CategoryFilter';
@@ -14,6 +14,7 @@ import {
   createCardRequest,
   updateCardRequest,
   deleteCardRequest,
+  markCardUsedRequest,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { playClickSound } from '../services/soundService';
@@ -29,6 +30,7 @@ export default function CommunicatorPage() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [selectedCards, setSelectedCards] = useState([]);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'keyboard'
+  const [sortByUsage, setSortByUsage] = useState(false); // 'más usadas primero'
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null); // null = modo "crear"
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -55,6 +57,14 @@ export default function CommunicatorPage() {
   const handleSelectCard = (card) => {
     playClickSound();
     setSelectedCards((prev) => [...prev, card]);
+
+    // Registra el uso solo para tarjetas reales (con id de Mongo), no para
+    // las entradas armadas con el teclado virtual (id "typed-...", no
+    // existen en la base de datos). Fire-and-forget: si falla, no debe
+    // interrumpir la construcción de la frase, que es lo importante.
+    if (!card._id?.toString().startsWith('typed-')) {
+      markCardUsedRequest(card._id).catch(() => {});
+    }
   };
 
   const handleRemoveFromPhrase = (index) => {
@@ -190,7 +200,22 @@ export default function CommunicatorPage() {
       </div>
 
       {viewMode === 'cards' && (
-        <CategoryFilter activeCategory={activeCategory} onChange={setActiveCategory} />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CategoryFilter activeCategory={activeCategory} onChange={setActiveCategory} />
+          <button
+            type="button"
+            onClick={() => setSortByUsage((prev) => !prev)}
+            aria-pressed={sortByUsage}
+            className={`mx-3 flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm font-semibold ${
+              sortByUsage
+                ? 'border-amber-400 bg-amber-100 text-amber-800'
+                : 'border-gray-200 bg-white text-gray-600'
+            }`}
+          >
+            <Star size={16} aria-hidden="true" fill={sortByUsage ? 'currentColor' : 'none'} />
+            Más usadas primero
+          </button>
+        </div>
       )}
 
       <main className="flex-1">
@@ -202,7 +227,11 @@ export default function CommunicatorPage() {
           </p>
         ) : (
           <CardGrid
-            cards={cards}
+            cards={
+              sortByUsage
+                ? [...cards].sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0))
+                : cards
+            }
             onCardSelect={handleSelectCard}
             onCardEdit={handleOpenEditCard}
             onCardDelete={handleDeleteCard}

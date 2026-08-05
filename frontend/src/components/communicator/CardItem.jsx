@@ -13,6 +13,19 @@ import DwellDetector from '../accessibility/DwellDetector';
 export default function CardItem({ card, onSelect, onEdit, onDelete, canManage, isScanning }) {
   const styles = getCategoryStyles(card.category);
 
+  // aria-label más descriptivo: combina el nombre de la categoría (color
+  // Fitzgerald) con el texto y, si existe, la descripción/contexto de uso.
+  // Ayuda a quien usa lector de pantalla a entender no solo qué dice la
+  // tarjeta sino para qué sirve, sin tener que abrirla para editarla.
+  const accessibleLabel = [styles.label, card.text, card.description].filter(Boolean).join('. ');
+
+  // Título nativo (tooltip al pasar el mouse/foco) con la descripción y los
+  // sinónimos, útil para tutores/terapeutas que navegan el tablero con
+  // teclado o mouse y quieren contexto rápido sin abrir el modal de edición.
+  const tooltip = [card.description, card.tags?.length ? `Sinónimos: ${card.tags.join(', ')}` : '']
+    .filter(Boolean)
+    .join(' — ');
+
   const handleEditClick = (e) => {
     e.stopPropagation(); // evita que el clic también seleccione la tarjeta en la frase
     onEdit(card);
@@ -42,6 +55,8 @@ export default function CardItem({ card, onSelect, onEdit, onDelete, canManage, 
           tabIndex={0}
           onClick={() => onSelect(card)}
           onKeyDown={handleSelectKeyDown}
+          title={tooltip || undefined}
+          aria-label={accessibleLabel}
           className={`card relative flex flex-col items-center justify-center gap-1 rounded-2xl border-4 p-3 min-h-[110px] transition-transform focus:scale-105 ${
             styles.bg
           } ${styles.border} ${styles.text} ${

@@ -27,6 +27,7 @@ export const getCardsRequest = (category) =>
 export const createCardRequest = (data) => api.post('/cards', data);
 export const updateCardRequest = (id, data) => api.put(`/cards/${id}`, data);
 export const deleteCardRequest = (id) => api.delete(`/cards/${id}`);
+export const markCardUsedRequest = (id) => api.patch(`/cards/${id}/use`);
 
 // --- Boards ---
 export const getBoardsRequest = () => api.get('/boards');

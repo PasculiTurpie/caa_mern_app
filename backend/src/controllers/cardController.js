@@ -93,7 +93,7 @@ export const getCardById = async (req, res, next) => {
  */
 export const createCard = async (req, res, next) => {
   try {
-    const { text, category, emoji, imageUrl, isPublic } = req.body;
+    const { text, category, emoji, imageUrl, isPublic, description, tags } = req.body;
 
     if (!text || !category) {
       res.status(400);
@@ -106,6 +106,8 @@ export const createCard = async (req, res, next) => {
       emoji,
       imageUrl,
       isPublic: Boolean(isPublic),
+      description,
+      tags,
       creator: req.user._id,
     });
 
@@ -138,7 +140,7 @@ export const updateCard = async (req, res, next) => {
     // Whitelist explícito de campos editables: evita que el body pueda
     // sobrescribir `creator`, `_id` u otros campos que no debería tocar
     // quien edita la tarjeta (mass assignment).
-    const EDITABLE_FIELDS = ['text', 'category', 'emoji', 'imageUrl', 'isPublic'];
+    const EDITABLE_FIELDS = ['text', 'category', 'emoji', 'imageUrl', 'isPublic', 'description', 'tags'];
     for (const field of EDITABLE_FIELDS) {
       if (field in req.body) {
         card[field] = req.body[field];
@@ -147,6 +149,36 @@ export const updateCard = async (req, res, next) => {
 
     const updatedCard = await card.save();
     res.json(updatedCard);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Registrar que la tarjeta se usó (se seleccionó para armar una
+ *          frase). Incrementa `usageCount` en +1. Se expone como acción
+ *          separada del PUT genérico, y no vía `updateCard`, para que
+ *          ningún cliente pueda escribir un valor arbitrario de uso.
+ * @route   PATCH /api/cards/:id/use
+ * @access  Privado (cualquiera que pueda VER la tarjeta puede marcarla
+ *          como usada, no hace falta permiso de edición)
+ */
+export const markCardUsed = async (req, res, next) => {
+  try {
+    const card = await Card.findById(req.params.id);
+    if (!card) {
+      res.status(404);
+      throw new Error('Tarjeta no encontrada');
+    }
+
+    if (!canViewCard(req.user, card)) {
+      res.status(403);
+      throw new Error('No tienes permiso para usar esta tarjeta');
+    }
+
+    card.usageCount += 1;
+    await card.save();
+    res.json({ usageCount: card.usageCount });
   } catch (error) {
     next(error);
   }

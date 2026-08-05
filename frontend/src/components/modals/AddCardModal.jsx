@@ -16,6 +16,8 @@ export default function AddCardModal({ isOpen, onClose, onSubmit, initialCard = 
   const [emoji, setEmoji] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [description, setDescription] = useState('');
+  const [tagsInput, setTagsInput] = useState(''); // texto crudo separado por comas
 
   // Cada vez que se abre el modal, precarga los datos de la tarjeta a editar
   // (o resetea el formulario si es una tarjeta nueva).
@@ -27,12 +29,16 @@ export default function AddCardModal({ isOpen, onClose, onSubmit, initialCard = 
       setEmoji(initialCard.emoji || '');
       setImageUrl(initialCard.imageUrl || '');
       setIsPublic(Boolean(initialCard.isPublic));
+      setDescription(initialCard.description || '');
+      setTagsInput((initialCard.tags || []).join(', '));
     } else {
       setText('');
       setCategory(CATEGORY_LIST[0]);
       setEmoji('');
       setImageUrl('');
       setIsPublic(false);
+      setDescription('');
+      setTagsInput('');
     }
   }, [isOpen, initialCard]);
 
@@ -41,7 +47,11 @@ export default function AddCardModal({ isOpen, onClose, onSubmit, initialCard = 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!text.trim()) return;
-    onSubmit({ text: text.trim(), category, emoji, imageUrl, isPublic });
+    const tags = tagsInput
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    onSubmit({ text: text.trim(), category, emoji, imageUrl, isPublic, description, tags });
     onClose();
   };
 
@@ -136,6 +146,34 @@ export default function AddCardModal({ isOpen, onClose, onSubmit, initialCard = 
                 onChange={(e) => setImageUrl(e.target.value)}
                 className="rounded-lg border-2 border-gray-300 p-2"
                 placeholder="https://..."
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="font-semibold">Descripción / contexto de uso (opcional)</span>
+              <span className="text-xs text-gray-500">
+                Nota para el equipo de cuidado, ej. "usar cuando señala la boca". No aparece en
+                la tarjeta, solo al pasar el cursor o en este formulario.
+              </span>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={280}
+                rows={2}
+                className="rounded-lg border-2 border-gray-300 p-2"
+                placeholder="Ej: Pedir agua cuando tiene sed o después de comer"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="font-semibold">Sinónimos / palabras clave (opcional)</span>
+              <span className="text-xs text-gray-500">Separados por coma, ej: sed, beber, líquido</span>
+              <input
+                type="text"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                className="rounded-lg border-2 border-gray-300 p-2"
+                placeholder="sed, beber, líquido"
               />
             </label>
 
