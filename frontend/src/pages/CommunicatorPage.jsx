@@ -62,9 +62,16 @@ export default function CommunicatorPage() {
   };
 
   // Quita la última tarjeta agregada a la frase, de a una por cada clic
-  // (en vez de vaciar toda la frase de una sola vez).
+  // ("backspace"). Útil para correcciones puntuales al final de la frase.
   const handleRemoveLastCard = () => {
     setSelectedCards((prev) => prev.slice(0, -1));
+  };
+
+  // Vacía toda la frase de una sola vez. Se mantiene como acción separada
+  // de "quitar última" porque en escaneo secuencial/dwell time, deshacer
+  // una frase larga tarjeta por tarjeta cuesta demasiado tiempo/esfuerzo.
+  const handleClearAllCards = () => {
+    setSelectedCards([]);
   };
 
   // Agrega el texto escrito con el teclado como un elemento más de la frase,
@@ -152,7 +159,8 @@ export default function CommunicatorPage() {
 
       <PhraseBar
         selectedCards={selectedCards}
-        onClear={handleRemoveLastCard}
+        onRemoveLast={handleRemoveLastCard}
+        onClearAll={handleClearAllCards}
         onRemoveCard={handleRemoveFromPhrase}
       />
 

@@ -1,0 +1,215 @@
+diff --git a/backend/package.json b/backend/package.json
+index d34349e..5c20e01 100644
+--- a/backend/package.json
++++ b/backend/package.json
+@@ -14,6 +14,8 @@
+     "cors": "^2.8.5",
+     "dotenv": "^16.4.5",
+     "express": "^4.19.2",
++    "express-rate-limit": "^8.6.2",
++    "helmet": "^8.3.0",
+     "jsonwebtoken": "^9.0.2",
+     "mongoose": "^8.5.0"
+   },
+diff --git a/backend/src/controllers/cardController.js b/backend/src/controllers/cardController.js
+index fd17f5a..d7f94a9 100644
+--- a/backend/src/controllers/cardController.js
++++ b/backend/src/controllers/cardController.js
+@@ -48,10 +48,24 @@ export const getCards = async (req, res, next) => {
+   }
+ };
+ 
++/**
++ * Determina si `user` puede VER `card` (no gestionarla): su propia tarjeta,
++ * una pública, o una creada por alguien de su equipo de cuidado vinculado.
++ * Misma regla de visibilidad que usa `getCards`, para que no se pueda
++ * esquivar el filtro pidiendo una tarjeta directamente por id.
++ */
++const canViewCard = (user, card) => {
++  const isOwner = card.creator.toString() === user._id.toString();
++  if (isOwner || card.isPublic) return true;
++
++  return (user.linkedUsers || []).some((id) => id.toString() === card.creator.toString());
++};
++
+ /**
+  * @desc    Obtener una tarjeta por id
+  * @route   GET /api/cards/:id
+- * @access  Privado
++ * @access  Privado (solo si es propia, pública, o de alguien de tu equipo
++ *          de cuidado vinculado — misma regla que la lista de tarjetas)
+  */
+ export const getCardById = async (req, res, next) => {
+   try {
+@@ -60,6 +74,12 @@ export const getCardById = async (req, res, next) => {
+       res.status(404);
+       throw new Error('Tarjeta no encontrada');
+     }
++
++    if (!canViewCard(req.user, card)) {
++      res.status(403);
++      throw new Error('No tienes permiso para ver esta tarjeta');
++    }
++
+     res.json(card);
+   } catch (error) {
+     next(error);
+@@ -115,7 +135,16 @@ export const updateCard = async (req, res, next) => {
+       throw new Error('No tienes permiso para editar esta tarjeta');
+     }
+ 
+-    Object.assign(card, req.body);
++    // Whitelist explícito de campos editables: evita que el body pueda
++    // sobrescribir `creator`, `_id` u otros campos que no debería tocar
++    // quien edita la tarjeta (mass assignment).
++    const EDITABLE_FIELDS = ['text', 'category', 'emoji', 'imageUrl', 'isPublic'];
++    for (const field of EDITABLE_FIELDS) {
++      if (field in req.body) {
++        card[field] = req.body[field];
++      }
++    }
++
+     const updatedCard = await card.save();
+     res.json(updatedCard);
+   } catch (error) {
+diff --git a/backend/src/server.js b/backend/src/server.js
+index 01682a6..b9c41b5 100644
+--- a/backend/src/server.js
++++ b/backend/src/server.js
+@@ -1,6 +1,8 @@
+ import express from 'express';
+ import dotenv from 'dotenv';
+ import cors from 'cors';
++import helmet from 'helmet';
++import rateLimit from 'express-rate-limit';
+ import connectDB from './config/db.js';
+ import authRoutes from './routes/authRoutes.js';
+ import boardRoutes from './routes/boardRoutes.js';
+@@ -13,6 +15,22 @@ connectDB();
+ 
+ const app = express();
+ 
++// Cabeceras de seguridad HTTP básicas (X-Content-Type-Options,
++// X-Frame-Options, quita X-Powered-By, etc.). No hay contenido servido
++// desde este backend que necesite relajar la CSP por defecto de helmet.
++app.use(helmet());
++
++// Límite de intentos de login/registro por IP, para mitigar fuerza bruta
++// sobre credenciales. Se aplica solo a /api/auth (no al resto de la API,
++// que ya requiere JWT válido vía `protect`).
++const authLimiter = rateLimit({
++  windowMs: 15 * 60 * 1000, // 15 minutos
++  max: 20, // 20 intentos por IP en la ventana, suficiente para uso normal
++  standardHeaders: true,
++  legacyHeaders: false,
++  message: { message: 'Demasiados intentos, intenta de nuevo más tarde' },
++});
++
+ // CORS: permite peticiones desde el/los frontend(s) configurados.
+ // CLIENT_URL admite varias URLs separadas por coma (ej. la URL de
+ // producción de Vercel + una URL de deploy específico), y siempre se
+@@ -49,7 +67,7 @@ app.get('/api/health', (req, res) => {
+   res.json({ status: 'ok', service: 'CAA API' });
+ });
+ 
+-app.use('/api/auth', authRoutes);
++app.use('/api/auth', authLimiter, authRoutes);
+ app.use('/api/boards', boardRoutes);
+ app.use('/api/cards', cardRoutes);
+ app.use('/api/links', linkRoutes);
+diff --git a/frontend/src/components/communicator/PhraseBar.jsx b/frontend/src/components/communicator/PhraseBar.jsx
+index c286b4a..844c563 100644
+--- a/frontend/src/components/communicator/PhraseBar.jsx
++++ b/frontend/src/components/communicator/PhraseBar.jsx
+@@ -1,14 +1,26 @@
+-import { Volume2, Delete, Sparkles } from 'lucide-react';
++import { Volume2, Delete, Trash2, Sparkles } from 'lucide-react';
+ import { getCategoryStyles } from '../../utils/fitzgeraldColors';
+ import { useSpeech } from '../../context/SpeechContext';
+ 
+ /**
+  * PhraseBar: muestra la secuencia de tarjetas seleccionadas por el usuario
+  * ("la frase en construcción"), con botones para reproducirla en voz alta,
+- * quitar la última tarjeta agregada (de a una), y (opcionalmente)
+- * expandirla con IA a una frase gramaticalmente completa.
++ * quitar la última tarjeta agregada (de a una, `onRemoveLast`), vaciar toda
++ * la frase de una sola vez (`onClearAll`) y (opcionalmente) expandirla con
++ * IA a una frase gramaticalmente completa.
++ *
++ * Se mantienen ambas acciones (y no solo "quitar última") pensando en
++ * escaneo secuencial / dwell time: si el usuario se equivoca al principio
++ * de una frase larga, cada clic extra le cuesta tiempo y esfuerzo, así que
++ * "vaciar todo" sigue siendo necesario como atajo.
+  */
+-export default function PhraseBar({ selectedCards, onClear, onRemoveCard, onExpandWithAI }) {
++export default function PhraseBar({
++  selectedCards,
++  onRemoveLast,
++  onClearAll,
++  onRemoveCard,
++  onExpandWithAI,
++}) {
+   const { speak } = useSpeech();
+ 
+   const phraseText = selectedCards.map((c) => c.text).join(' ');
+@@ -70,7 +82,7 @@ export default function PhraseBar({ selectedCards, onClear, onRemoveCard, onExpa
+ 
+       <button
+         type="button"
+-        onClick={onClear}
++        onClick={onRemoveLast}
+         disabled={selectedCards.length === 0}
+         className="flex items-center gap-2 rounded-xl bg-gray-200 px-4 py-3 font-bold text-gray-700 disabled:opacity-40"
+         aria-label="Quitar la última tarjeta de la frase"
+@@ -78,6 +90,17 @@ export default function PhraseBar({ selectedCards, onClear, onRemoveCard, onExpa
+       >
+         <Delete size={22} aria-hidden="true" />
+       </button>
++
++      <button
++        type="button"
++        onClick={onClearAll}
++        disabled={selectedCards.length === 0}
++        className="flex items-center gap-2 rounded-xl bg-red-100 px-4 py-3 font-bold text-red-700 disabled:opacity-40"
++        aria-label="Borrar toda la frase"
++        title="Borrar toda la frase"
++      >
++        <Trash2 size={22} aria-hidden="true" />
++      </button>
+     </div>
+   );
+ }
+diff --git a/frontend/src/pages/CommunicatorPage.jsx b/frontend/src/pages/CommunicatorPage.jsx
+index be76dc9..b32b559 100644
+--- a/frontend/src/pages/CommunicatorPage.jsx
++++ b/frontend/src/pages/CommunicatorPage.jsx
+@@ -62,11 +62,18 @@ export default function CommunicatorPage() {
+   };
+ 
+   // Quita la última tarjeta agregada a la frase, de a una por cada clic
+-  // (en vez de vaciar toda la frase de una sola vez).
++  // ("backspace"). Útil para correcciones puntuales al final de la frase.
+   const handleRemoveLastCard = () => {
+     setSelectedCards((prev) => prev.slice(0, -1));
+   };
+ 
++  // Vacía toda la frase de una sola vez. Se mantiene como acción separada
++  // de "quitar última" porque en escaneo secuencial/dwell time, deshacer
++  // una frase larga tarjeta por tarjeta cuesta demasiado tiempo/esfuerzo.
++  const handleClearAllCards = () => {
++    setSelectedCards([]);
++  };
++
+   // Agrega el texto escrito con el teclado como un elemento más de la frase,
+   // igual que si fuera una tarjeta (así se lee junto con el resto al presionar
+   // "Hablar" en la barra de frase, y se puede quitar tocándolo).
+@@ -152,7 +159,8 @@ export default function CommunicatorPage() {
+ 
+       <PhraseBar
+         selectedCards={selectedCards}
+-        onClear={handleRemoveLastCard}
++        onRemoveLast={handleRemoveLastCard}
++        onClearAll={handleClearAllCards}
+         onRemoveCard={handleRemoveFromPhrase}
+       />
+ 
